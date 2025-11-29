@@ -1,0 +1,85 @@
+# Makefile for Paho MQTT C Client on AmigaOS 4
+
+# Compiler and Tools
+CC ?= ppc-amigaos-gcc
+AR ?= ppc-amigaos-ar
+RANLIB ?= ppc-amigaos-ranlib
+
+# Flags
+# -D_POSIX_C_SOURCE=200809L: Enable POSIX features
+# -Isrc: Include source directory
+# -I$(BLDDIR): Include build directory for generated headers
+CFLAGS = -O2 -Wall -Isrc -I$(BLDDIR) -D_POSIX_C_SOURCE=200809L -DUSE_SELECT -D__amigaos4__ -DPAHO_IGNORE_WITH_SIGNAL
+
+# Source Directory
+SRCDIR = src
+BLDDIR = build/amigaos4
+
+# Version Information
+MAJOR_VERSION = 1
+MINOR_VERSION = 3
+PATCH_VERSION = 13
+VERSION = $(MAJOR_VERSION).$(MINOR_VERSION).$(PATCH_VERSION)
+BUILD_TIMESTAMP = $(shell date)
+
+# Source files for Synchronous Client (MQTTClient)
+SOURCES = $(SRCDIR)/Base64.c \
+          $(SRCDIR)/Clients.c \
+          $(SRCDIR)/Heap.c \
+          $(SRCDIR)/LinkedList.c \
+          $(SRCDIR)/Log.c \
+          $(SRCDIR)/Messages.c \
+          $(SRCDIR)/MQTTClient.c \
+          $(SRCDIR)/MQTTPacket.c \
+          $(SRCDIR)/MQTTPacketOut.c \
+          $(SRCDIR)/MQTTPersistence.c \
+          $(SRCDIR)/MQTTPersistenceDefault.c \
+          $(SRCDIR)/MQTTProperties.c \
+          $(SRCDIR)/MQTTProtocolClient.c \
+          $(SRCDIR)/MQTTProtocolOut.c \
+          $(SRCDIR)/MQTTReasonCodes.c \
+          $(SRCDIR)/MQTTTime.c \
+          $(SRCDIR)/OsWrapper.c \
+          $(SRCDIR)/Proxy.c \
+          $(SRCDIR)/SHA1.c \
+          $(SRCDIR)/Socket.c \
+          $(SRCDIR)/SocketBuffer.c \
+          $(SRCDIR)/StackTrace.c \
+          $(SRCDIR)/Thread.c \
+          $(SRCDIR)/Tree.c \
+          $(SRCDIR)/WebSocket.c \
+          $(SRCDIR)/utf-8.c
+
+OBJECTS = $(patsubst $(SRCDIR)/%.c,$(BLDDIR)/%.o,$(SOURCES))
+
+TARGET_LIB = $(BLDDIR)/libpaho-mqtt3c.a
+TARGET_SAMPLE = $(BLDDIR)/MQTTClient_publish
+
+# Targets
+all: $(TARGET_LIB) $(TARGET_SAMPLE)
+
+$(TARGET_LIB): $(OBJECTS)
+	@mkdir -p $(dir $@)
+	$(AR) rcs $@ $^
+	$(RANLIB) $@
+
+$(BLDDIR)/%.o: $(SRCDIR)/%.c $(BLDDIR)/VersionInfo.h
+	@mkdir -p $(dir $@)
+	$(CC) $(CFLAGS) -c $< -o $@
+
+$(BLDDIR)/VersionInfo.h: $(SRCDIR)/VersionInfo.h.in
+	@mkdir -p $(dir $@)
+	sed -e "s/@PROJECT_VERSION@/$(VERSION)/g" \
+	    -e "s/@PROJECT_VERSION_MAJOR@/$(MAJOR_VERSION)/g" \
+	    -e "s/@PROJECT_VERSION_MINOR@/$(MINOR_VERSION)/g" \
+	    -e "s/@PROJECT_VERSION_PATCH@/$(PATCH_VERSION)/g" \
+	    -e "s/@BUILD_TIMESTAMP@/$(BUILD_TIMESTAMP)/g" \
+	    $< > $@
+
+$(TARGET_SAMPLE): $(SRCDIR)/samples/MQTTClient_publish.c $(TARGET_LIB)
+	$(CC) $(CFLAGS) $< -o $@ -L$(BLDDIR) -lpaho-mqtt3c -lpthread
+
+clean:
+	rm -rf $(BLDDIR)
+
+.PHONY: all clean

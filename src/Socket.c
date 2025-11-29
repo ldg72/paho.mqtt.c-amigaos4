@@ -48,6 +48,19 @@
 #include <sys/un.h>
 #endif
 
+#if defined(__amigaos4__)
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <netdb.h>
+#include <arpa/inet.h>
+#ifndef SHUT_WR
+#define SHUT_WR 1
+#endif
+#ifndef AI_ADDRCONFIG
+#define AI_ADDRCONFIG 0
+#endif
+#endif
+
 #if defined(USE_SELECT)
 int isReady(int socket, fd_set* read_set, fd_set* write_set);
 int Socket_continueWrites(fd_set* pwset, SOCKET* socket, mutex_type mutex);
@@ -123,8 +136,10 @@ int Socket_error(char* aString, SOCKET sock)
 #endif
 	if (err != EINTR && err != EAGAIN && err != EINPROGRESS && err != EWOULDBLOCK)
 	{
-		if (strcmp(aString, "shutdown") != 0 || (err != ENOTCONN && err != ECONNRESET))
+		if (strcmp(aString, "shutdown") != 0 || (err != ENOTCONN && err != ECONNRESET)) {
 			Log(TRACE_MINIMUM, -1, "Socket error %s(%d) in %s for socket %d", strerror(err), err, aString, sock);
+            fprintf(stderr, "Socket error: %s (%d) in %s for socket %d\n", strerror(err), err, aString, sock);
+        }
 	}
 	return err;
 }
@@ -1150,7 +1165,9 @@ int Socket_new(const char* addr, size_t addr_len, int port, SOCKET* sock)
 
 	FUNC_ENTRY;
 	*sock = SOCKET_ERROR;
+#if defined(AF_INET6)
 	memset(&address6, '\0', sizeof(address6));
+#endif
 
 	if (addr[0] == '[')
 	{
@@ -1635,7 +1652,11 @@ char* Socket_getaddrname(struct sockaddr* sa, SOCKET sock)
  */
 char* Socket_getpeer(SOCKET sock)
 {
+#if defined(AF_INET6)
 	struct sockaddr_in6 sa;
+#else
+	struct sockaddr_in sa;
+#endif
 	socklen_t sal = sizeof(sa);
 
 	if (getpeername(sock, (struct sockaddr*)&sa, &sal) == SOCKET_ERROR)

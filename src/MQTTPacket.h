@@ -57,6 +57,10 @@ enum msgTypes
 #endif
 #endif
 
+#if defined(__amigaos4__)
+    #define REVERSED 1
+#endif
+
 /**
  * Bitfields for the MQTT header byte.
  */

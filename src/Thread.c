@@ -241,6 +241,16 @@ sem_type Thread_create_sem(int *rc)
 	#elif defined(OSX)
 		sem = dispatch_semaphore_create(0L);
 		*rc = (sem == NULL) ? -1 : 0;
+	#elif defined(__amigaos4__)
+		sem = malloc(sizeof(sem_struct));
+		if (sem) {
+			pthread_mutex_init(&(sem->mutex), NULL);
+			pthread_cond_init(&(sem->cond), NULL);
+			sem->count = 0;
+			*rc = 0;
+		} else {
+			*rc = -1;
+		}
 	#else
 		sem = malloc(sizeof(sem_t));
 		if (sem)
@@ -285,6 +295,32 @@ int Thread_wait_sem(sem_type sem, int timeout)
 		rc = (int)dispatch_semaphore_wait(sem, dispatch_time(DISPATCH_TIME_NOW, (int64_t)timeout*1000000L));
 		if (rc != 0)
 			rc = ETIMEDOUT;
+	#elif defined(__amigaos4__)
+		pthread_mutex_lock(&(sem->mutex));
+		if (timeout < 0) {
+			while (sem->count <= 0) {
+				pthread_cond_wait(&(sem->cond), &(sem->mutex));
+			}
+			sem->count--;
+			rc = 0;
+		} else {
+			struct timespec ts;
+			clock_gettime(CLOCK_REALTIME, &ts);
+			ts.tv_sec += timeout / 1000;
+			ts.tv_nsec += (timeout % 1000) * 1000000;
+			while (ts.tv_nsec >= 1000000000) {
+				ts.tv_sec++;
+				ts.tv_nsec -= 1000000000;
+			}
+			
+			rc = 0;
+			while (sem->count <= 0) {
+				rc = pthread_cond_timedwait(&(sem->cond), &(sem->mutex), &ts);
+				if (rc == ETIMEDOUT) break;
+			}
+			if (rc == 0) sem->count--;
+		}
+		pthread_mutex_unlock(&(sem->mutex));
 	#elif defined(USE_TRYWAIT)
 		while (++i < count && (rc = sem_trywait(sem)) != 0)
 		{
@@ -327,6 +363,15 @@ int Thread_check_sem(sem_type sem)
 #elif defined(OSX)
 	/* if the return value is not 0, the semaphore will not have been decremented */
 	return dispatch_semaphore_wait(sem, DISPATCH_TIME_NOW) == 0;
+#elif defined(__amigaos4__)
+	int rc = 0;
+	pthread_mutex_lock(&(sem->mutex));
+	if (sem->count > 0) {
+		sem->count--;
+		rc = 1;
+	}
+	pthread_mutex_unlock(&(sem->mutex));
+	return rc;
 #else
 	/* If the call was unsuccessful, the state of the semaphore shall be unchanged,
 	 * and the function shall return a value of -1 */
@@ -350,6 +395,12 @@ int Thread_post_sem(sem_type sem)
 			rc = GetLastError();
 	#elif defined(OSX)
 		rc = (int)dispatch_semaphore_signal(sem);
+	#elif defined(__amigaos4__)
+		pthread_mutex_lock(&(sem->mutex));
+		sem->count++;
+		pthread_cond_signal(&(sem->cond));
+		pthread_mutex_unlock(&(sem->mutex));
+		rc = 0;
 	#else
 		int val;
 		int rc1 = sem_getvalue(sem, &val);
@@ -377,6 +428,10 @@ int Thread_destroy_sem(sem_type sem)
 		rc = CloseHandle(sem);
 	#elif defined(OSX)
 	  dispatch_release(sem);
+	#elif defined(__amigaos4__)
+		pthread_cond_destroy(&(sem->cond));
+		pthread_mutex_destroy(&(sem->mutex));
+		free(sem);
 	#else
 		rc = sem_destroy(sem);
 		free(sem);

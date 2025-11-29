@@ -57,6 +57,14 @@
 	#if defined(OSX)
 	  #include <dispatch/dispatch.h>
 	  typedef dispatch_semaphore_t sem_type;
+	#elif defined(__amigaos4__)
+	  /* AmigaOS 4 pthread implementation might lack semaphore.h */
+	  typedef struct {
+		  pthread_mutex_t mutex;
+		  pthread_cond_t cond;
+		  int count;
+	  } sem_struct;
+	  typedef sem_struct *sem_type;
 	#else
 	  #include <semaphore.h>
 	  typedef sem_t *sem_type;

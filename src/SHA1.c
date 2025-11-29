@@ -60,6 +60,10 @@ int SHA1_Final(unsigned char *md, SHA_CTX *c)
 #  define be32toh(x) OSSwapBigToHostInt32(x)
 #elif defined(__FreeBSD__) || defined(__NetBSD__)
 #  include <sys/endian.h>
+#elif defined(__amigaos4__)
+  /* AmigaOS 4 (PPC) is Big Endian, so these are identity functions */
+  #define htobe32(x) (x)
+  #define be32toh(x) (x)
 #endif
 #include <string.h>
 static unsigned char pad[64] = {

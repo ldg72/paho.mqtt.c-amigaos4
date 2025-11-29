@@ -47,6 +47,14 @@
 #  define be64toh(x) OSSwapBigToHostInt64(x)
 #elif defined(__FreeBSD__) || defined(__NetBSD__)
 #  include <sys/endian.h>
+#elif defined(__amigaos4__)
+  /* AmigaOS 4 (PPC) is Big Endian, so these are identity functions */
+  #define htobe16(x) (x)
+  #define htobe32(x) (x)
+  #define htobe64(x) (x)
+  #define be16toh(x) (x)
+  #define be32toh(x) (x)
+  #define be64toh(x) (x)
 #elif defined(_WIN32)
 #  pragma comment(lib, "rpcrt4.lib")
 #  include <rpc.h>

@@ -55,11 +55,15 @@ START_TIME_TYPE MQTTTime_start_clock(void)
 START_TIME_TYPE MQTTTime_start_clock(void)
 {
 	struct timeval start;
+#if defined(CLOCK_MONOTONIC)
 	struct timespec start_ts;
 
 	clock_gettime(CLOCK_MONOTONIC, &start_ts);
 	start.tv_sec = start_ts.tv_sec;
 	start.tv_usec = start_ts.tv_nsec / 1000;
+#else
+	gettimeofday(&start, NULL);
+#endif
 	return start;
 }
 #endif

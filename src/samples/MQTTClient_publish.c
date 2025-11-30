@@ -35,7 +35,11 @@ int main(int argc, char* argv[])
     int rc;
 
     const char* uri = (argc > 1) ? argv[1] : ADDRESS;
+    const char* username = (argc > 2) ? argv[2] : NULL;
+    const char* password = (argc > 3) ? argv[3] : NULL;
+
     printf("Using server at %s\n", uri);
+    if (username) printf("Using username: %s\n", username);
 
     if ((rc = MQTTClient_create(&client, uri, CLIENTID,
         MQTTCLIENT_PERSISTENCE_NONE, NULL)) != MQTTCLIENT_SUCCESS)
@@ -46,6 +50,9 @@ int main(int argc, char* argv[])
 
     conn_opts.keepAliveInterval = 20;
     conn_opts.cleansession = 1;
+    if (username) conn_opts.username = username;
+    if (password) conn_opts.password = password;
+
     if ((rc = MQTTClient_connect(client, &conn_opts)) != MQTTCLIENT_SUCCESS)
     {
         printf("Failed to connect, return code %d\n", rc);

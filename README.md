@@ -30,12 +30,17 @@ The following files have been modified or added for the AmigaOS 4 port:
 -   `README.md`: This documentation file.
 
 ### Modified Files
+-   `src/MQTTPacket.h`: Defined `REVERSED` for Big Endian bitfields on AmigaOS 4.
+-   `src/MQTTProperties.c`: Removed incompatible `<memory.h>` include.
+-   `src/MQTTReasonCodes.c`: Removed incompatible `<memory.h>` include.
+-   `src/MQTTTime.c`: Fixed `CLOCK_MONOTONIC` usage for AmigaOS.
+-   `src/SHA1.c`: Added Big Endian handling for AmigaOS 4 (PPC).
 -   `src/Socket.c`: Added AmigaOS specific headers and network definitions.
+-   `src/Socket.h`: Modified to handle `poll.h` inclusion for AmigaOS.
 -   `src/Thread.c`: Implemented semaphores using pthreads for AmigaOS 4.
 -   `src/Thread.h`: Added `sem_struct` definition for AmigaOS 4.
 -   `src/WebSocket.c`: Added Big Endian handling for AmigaOS 4 (PPC).
--   `src/SHA1.c`: Added Big Endian handling for AmigaOS 4 (PPC).
--   `src/MQTTPacket.h`: Defined `REVERSED` for Big Endian bitfields on AmigaOS 4.
+-   `src/samples/MQTTClient_publish.c`: Updated sample application.
 
 ## Installation
 
@@ -63,4 +68,3 @@ This project is licensed under the Eclipse Public License 2.0 and Eclipse Distri
 ## Usage
 
 Link your application with `-Lbuild/amigaos4 -lpaho-mqtt3c -lpthread`.
-

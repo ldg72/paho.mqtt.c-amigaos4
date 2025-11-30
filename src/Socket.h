@@ -52,7 +52,9 @@
 #include <sys/param.h>
 #include <sys/time.h>
 #include <sys/select.h>
+#if !defined(USE_SELECT)
 #include <poll.h>
+#endif
 #include <sys/uio.h>
 #else
 #include <selectLib.h>

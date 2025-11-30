@@ -273,15 +273,16 @@ int Thread_wait_sem(sem_type sem, int timeout)
  * so I've used trywait in a loop instead. Ian Craggs 23/7/2010
  */
 	int rc = -1;
-#if !defined(_WIN32) && !defined(OSX)
+#if !defined(_WIN32) && !defined(OSX) && !defined(__amigaos4__)
 #define USE_TRYWAIT
+#endif
+
 #if defined(USE_TRYWAIT)
 	int i = 0;
 	useconds_t interval = 10000; /* 10000 microseconds: 10 milliseconds */
 	int count = (1000 * timeout) / interval; /* how many intervals in timeout period */
-#else
+#elif !defined(_WIN32) && !defined(OSX) && !defined(__amigaos4__)
 	struct timespec ts;
-#endif
 #endif
 
 	FUNC_ENTRY;
